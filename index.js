@@ -113,6 +113,9 @@ async function startBotz() {
         : '';
       const args = body.trim().split(/ +/).slice(1);
       const text = (q = args.join(' '));
+      const sender = m.key.fromMe
+        ? ptz.user.id.split(':')[0] + '@s.whatsapp.net' || ptz.user.id
+        : m.key.participant || m.key.remoteJid;
       const botNumber = await ptz.decodeJid(ptz.user.id);
       const senderNumber = sender.split('@')[0];
       const isBot = botNumber.includes(senderNumber);
@@ -122,9 +125,6 @@ async function startBotz() {
         : '';
       const groupName = m.isGroup ? groupMetadata.subject : '';
       const participants = m.isGroup ? await groupMetadata.participants : '';
-      const sender = m.key.fromMe
-        ? ptz.user.id.split(':')[0] + '@s.whatsapp.net' || ptz.user.id
-        : m.key.participant || m.key.remoteJid;
       const pushname = m.pushName || `${senderNumber}`;
       const isGroup = m.isGroup;
       const mime = (quoted.msg || quoted).mimetype || '';
