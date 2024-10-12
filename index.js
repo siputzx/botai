@@ -16,7 +16,7 @@ const {
 const pino = require('pino');
 const { Boom } = require('@hapi/boom');
 const fs = require('fs');
-const axios = require('axios')
+const axios = require('axios');
 const readline = require('readline');
 const PhoneNumber = require('awesome-phonenumber');
 
@@ -141,13 +141,13 @@ async function startBotz() {
       };
       const from = m.chat;
 
-      setInterval(async() => {
-        if (ptz.ai && ptz.ai[m.sender]) {
+      setInterval(async () => {
+        if (ptz.ai && ptz.ai[sender]) {
           const now = Date.now();
-          const lastActive = ptz.ai[m.sender].lastactive;
+          const lastActive = ptz.ai[sender].lastactive;
 
           if (now - lastActive > 10 * 1000) {
-            delete ptz.ai[m.sender];
+            delete ptz.ai[sender];
             await reply(
               '[ ✓ ] AutoAI dinonaktifkan otomatis karena tidak digunakan selama 10 menit.',
             );
@@ -155,15 +155,27 @@ async function startBotz() {
         }
       }, 1000);
 
-      if (command  && !isBot) {
+      if (command && !isBot) {
         console.log(
-          `${m.isGroup ? '\x1b[0;32mGC\x1b[1;32m-CMD' : '\x1b[1;32m MESSAGE'} \x1b[0m[ \x1b[1;37m${command} \x1b[0m] at \x1b[0;32m${calender}\x1b[0m\n› ${m.chat}\n› from; \x1b[0;37m${m.sender.split('@')[0]}\x1b[0m${m.pushName ? ', ' + m.pushName : ''}\n› in; \x1b[0;32m${m.isGroup ? groupName : 'PRIVATE MESSAGE'}\x1b[0m`,
+          `${m.isGroup ? '\x1b[0;32mGC\x1b[1;32m-CMD' : '\x1b[1;32m MESSAGE'} \x1b[0m[ \x1b[1;37m${command} \x1b[0m] at \x1b[0;32m${calender}\x1b[0m\n› ${m.chat}\n› from; \x1b[0;37m${sender.split('@')[0]}\x1b[0m${m.pushName ? ', ' + m.pushName : ''}\n› in; \x1b[0;32m${m.isGroup ? groupName : 'PRIVATE MESSAGE'}\x1b[0m`,
         );
         ptz.readMessages([m.key]);
         ptz.sendPresenceUpdate('composing', from);
       }
 
       switch (command) {
+        case 'menu':
+          {
+            await reply(`*Menu*\n${prefix}autoai\n${prefix}sc`);
+          }
+          break;
+        case 'sc':
+          {
+            reply(
+              `*Script Bot*\n_*script bot ini bisa kamu dapatkan dengan mengunjungi link github ini*_\n[https://github.com/siputzx/botwa]`,
+            );
+          }
+          break;
         case 'autoai':
           ptz.ai = ptz.ai ? ptz.ai : {};
           if (!text)
@@ -176,18 +188,20 @@ async function startBotz() {
                 'Pilih AI yang valid: *bard*, *duckduckgo*, atau *luminai*',
               );
             }
-            let user = await generateRandomUserCode()
-            ptz.ai[m.sender] = { aiChoice, user, lastactive: Date.now() };
-            reply(`[ ✓ ] Berhasil mengaktifkan autoAI dengan ${aiChoice}. perlu di ingat chat sesi akan otomatis terhapus jika tidak digunakan selama 10 menit`);
+            let user = await generateRandomUserCode();
+            ptz.ai[sender] = { aiChoice, user, lastactive: Date.now() };
+            reply(
+              `[ ✓ ] Berhasil mengaktifkan autoAI dengan ${aiChoice}. perlu di ingat chat sesi akan otomatis terhapus jika tidak digunakan selama 10 menit`,
+            );
           } else if (text === 'off') {
-            delete ptz.ai[m.sender];
+            delete ptz.ai[sender];
             reply('[ ✓ ] Berhasil menonaktifkan autoAI');
           }
           break;
 
         default:
-          if (ptz.ai && ptz.ai[m.sender]) {
-            const { aiChoice, user } = ptz.ai[m.sender];
+          if (ptz.ai && ptz.ai[sender]) {
+            const { aiChoice, user } = ptz.ai[sender];
 
             let response;
             if (/audio|video|image|sticker/.test(mime)) return;
@@ -222,10 +236,10 @@ async function startBotz() {
               } else {
                 response =
                   'AI tidak tersedia! Pastikan AI yang dipilih benar atau sudah diaktifkan.';
-              }                          
+              }
               await ptz.sendMessage(m.chat, { text: `${response}` });
-              ptz.ai[m.sender].lastactive = Date.now();
-              console.log(ptz.ai)
+              ptz.ai[sender].lastactive = Date.now();
+              console.log(ptz.ai);
             }
           }
       }
@@ -439,20 +453,21 @@ function smsg(ptz, m, store) {
 }
 
 function generateRandomUserCode() {
-    return new Promise((resolve) => {
-        const prefix = 'user-';
-        const dateBuffer = Buffer.from(Date.now().toString());
-        const randomCode = dateBuffer.toString('hex').slice(-5);
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        
-        let code = '';
-        for (let i = 0; i < 5; i++) {
-            code += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-        
-        const finalCode = `${prefix}${randomCode}${code}`;
-        resolve(finalCode);
-    });
+  return new Promise((resolve) => {
+    const prefix = 'user-';
+    const dateBuffer = Buffer.from(Date.now().toString());
+    const randomCode = dateBuffer.toString('hex').slice(-5);
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+
+    const finalCode = `${prefix}${randomCode}${code}`;
+    resolve(finalCode);
+  });
 }
 
 let file = require.resolve(__filename);
