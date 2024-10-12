@@ -113,9 +113,9 @@ async function startBotz() {
         : '';
       const args = body.trim().split(/ +/).slice(1);
       const text = (q = args.join(' '));
-      const botId = await ptz.decodeJid(ptz.user.id);
-      const botNumber = botId.split('@')[0];
-      const dtext = args.join(' ');
+      const botNumber = await ptz.decodeJid(ptz.user.id);
+      const senderNumber = sender.split('@')[0];
+      const isBot = botNumber.includes(senderNumber);
       const quoted = (q = m.quoted ? m.quoted : m);
       const groupMetadata = m.isGroup
         ? await ptz.groupMetadata(m.chat).catch((e) => {})
@@ -142,22 +142,21 @@ async function startBotz() {
       };
       const from = m.chat;
 
-      setInterval(() => {
+      setInterval(async() => {
         if (ptz.ai && ptz.ai[m.sender]) {
           const now = Date.now();
           const lastActive = ptz.ai[m.sender].lastactive;
 
-          if (now - lastActive > 10 * 60 * 1000) {
-            // 10 menit = 600 detik
+          if (now - lastActive > 10 * 1000) {
             delete ptz.ai[m.sender];
-            reply(
+            await reply(
               '[ ✓ ] AutoAI dinonaktifkan otomatis karena tidak digunakan selama 10 menit.',
             );
           }
         }
       }, 1000);
 
-      if (command) {
+      if (command  && !isBot) {
         console.log(
           `${m.isGroup ? '\x1b[0;32mGC\x1b[1;32m-CMD' : '\x1b[1;32m MESSAGE'} \x1b[0m[ \x1b[1;37m${command} \x1b[0m] at \x1b[0;32m${calender}\x1b[0m\n› ${m.chat}\n› from; \x1b[0;37m${m.sender.split('@')[0]}\x1b[0m${m.pushName ? ', ' + m.pushName : ''}\n› in; \x1b[0;32m${m.isGroup ? groupName : 'PRIVATE MESSAGE'}\x1b[0m`,
         );
@@ -178,8 +177,8 @@ async function startBotz() {
                 'Pilih AI yang valid: *bard*, *duckduckgo*, atau *luminai*',
               );
             }
-
-            ptz.ai[m.sender] = { ai: aiChoice, lastactive: Date.now() };
+            let user = await generateRandomUserCode()
+            ptz.ai[m.sender] = { aiChoice, user, lastactive: Date.now() };
             reply(`[ ✓ ] Berhasil mengaktifkan autoAI dengan ${aiChoice}. perlu di ingat chat sesi akan otomatis terhapus jika tidak digunakan selama 10 menit`);
           } else if (text === 'off') {
             delete ptz.ai[m.sender];
@@ -189,7 +188,7 @@ async function startBotz() {
 
         default:
           if (ptz.ai && ptz.ai[m.sender]) {
-            const aiChoice = ptz.ai[m.sender].ai;
+            const { aiChoice, user } = ptz.ai[m.sender];
 
             let response;
             if (/audio|video|image|sticker/.test(mime)) return;
@@ -200,7 +199,7 @@ async function startBotz() {
                     response = (
                       await axios.post('https://luminai.my.id/v3', {
                         text: budy,
-                        user: sender,
+                        user,
                       })
                     ).data.result;
                     break;
@@ -208,7 +207,7 @@ async function startBotz() {
                     response = (
                       await axios.post('https://luminai.my.id/v2', {
                         text: budy,
-                        userid: sender,
+                        userid: user,
                       })
                     ).data.reply.reply;
                     break;
@@ -216,7 +215,7 @@ async function startBotz() {
                     response = (
                       await axios.post('https://luminai.my.id/', {
                         content: budy,
-                        user: sender,
+                        user,
                       })
                     ).data.result;
                     break;
@@ -224,10 +223,10 @@ async function startBotz() {
               } else {
                 response =
                   'AI tidak tersedia! Pastikan AI yang dipilih benar atau sudah diaktifkan.';
-              }
-
+              }                          
               await ptz.sendMessage(m.chat, { text: `${response}` });
               ptz.ai[m.sender].lastactive = Date.now();
+              console.log(ptz.ai)
             }
           }
       }
@@ -438,6 +437,23 @@ function smsg(ptz, m, store) {
     ptz.copyNForward(jid, m, forceForward, options);
 
   return m;
+}
+
+function generateRandomUserCode() {
+    return new Promise((resolve) => {
+        const prefix = 'user-';
+        const dateBuffer = Buffer.from(Date.now().toString());
+        const randomCode = dateBuffer.toString('hex').slice(-5);
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        
+        let code = '';
+        for (let i = 0; i < 5; i++) {
+            code += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        
+        const finalCode = `${prefix}${randomCode}${code}`;
+        resolve(finalCode);
+    });
 }
 
 let file = require.resolve(__filename);
