@@ -146,7 +146,7 @@ async function startBotz() {
           const now = Date.now();
           const lastActive = ptz.ai[sender].lastactive;
 
-          if (now - lastActive > 10 * 1000) {
+          if (now - lastActive > 10 * 60 * 1000) {
             delete ptz.ai[sender];
             await reply(
               '[ ✓ ] AutoAI dinonaktifkan otomatis karena tidak digunakan selama 10 menit.',
@@ -182,6 +182,7 @@ async function startBotz() {
             reply(`*Contoh:* .autoai *[on/off] [bard/duckduckgo/luminai]*`);
 
           if (text.startsWith('on')) {
+            if (ptz.ai[sender]) return reply("udah on")
             const aiChoice = args[1] ? args[1].toLowerCase() : 'luminai';
             if (!['bard', 'duckduckgo', 'luminai'].includes(aiChoice)) {
               return reply(
