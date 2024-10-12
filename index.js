@@ -125,7 +125,6 @@ async function startBotz() {
       const sender = m.key.fromMe
         ? ptz.user.id.split(':')[0] + '@s.whatsapp.net' || ptz.user.id
         : m.key.participant || m.key.remoteJid;
-      const senderNumber = sender.split('@')[0];
       const pushname = m.pushName || `${senderNumber}`;
       const isGroup = m.isGroup;
       const mime = (quoted.msg || quoted).mimetype || '';
